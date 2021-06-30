@@ -101,6 +101,7 @@ typedef res_state (*__res_state_pfn_t)();
 typedef int (*__poll_pfn_t)(struct pollfd fds[], nfds_t nfds, int timeout);
 typedef int (*gethostbyname_r_pfn_t)(const char* __restrict name, struct hostent* __restrict __result_buf, char* __restrict __buf, size_t __buflen, struct hostent** __restrict __result, int* __restrict __h_errnop);
 
+//函数dlsym的参数RTLD_NEXT可以在对函数实现所在动态库名称未知的情况下完成对库函数的替代
 static socket_pfn_t g_sys_socket_func 	= (socket_pfn_t)dlsym(RTLD_NEXT,"socket");
 static connect_pfn_t g_sys_connect_func = (connect_pfn_t)dlsym(RTLD_NEXT,"connect");
 static close_pfn_t g_sys_close_func 	= (close_pfn_t)dlsym(RTLD_NEXT,"close");
@@ -939,7 +940,8 @@ int gethostbyname_r(const char* __restrict name,
   HOOK_SYS_FUNC(gethostbyname_r);
 
 #if defined( __APPLE__ ) || defined( __FreeBSD__ )
-	return g_sys_gethostbyname_r_func( name );
+	return g_sys_gethostbyname_r_func(name, __result_buf, __buf, __buflen,
+                                      __result, __h_errnop);
 #else
   if (!co_is_enable_sys_hook()) {
     return g_sys_gethostbyname_r_func(name, __result_buf, __buf, __buflen,

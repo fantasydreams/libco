@@ -25,9 +25,10 @@
 
 //1.struct
 
-struct stCoRoutine_t;
-struct stShareStack_t;
+struct stCoRoutine_t;  //协程结构
+struct stShareStack_t; //共享栈结构
 
+//协程属性结构
 struct stCoRoutineAttr_t
 {
 	int stack_size;
