@@ -46,4 +46,7 @@ $ make
 ```
 
 or use bazel
+
+```bash
 bazel build :all
+```
