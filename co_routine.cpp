@@ -48,11 +48,12 @@ using namespace std;
 stCoRoutine_t *GetCurrCo( stCoRoutineEnv_t *env );
 struct stCoEpoll_t;
 
+//协程环境
 struct stCoRoutineEnv_t
 {
 	stCoRoutine_t *pCallStack[ 128 ];
 	int iCallStackSize;
-	stCoEpoll_t *pEpoll;
+	stCoEpoll_t *pEpoll; //该协程的epoll实例
 
 	//for copy stack log lastco and nextco
 	stCoRoutine_t* pending_co;
@@ -469,15 +470,15 @@ struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAt
 	}
 	if( at.stack_size <= 0 )
 	{
-		at.stack_size = 128 * 1024;
+		at.stack_size = 128 * 1024; // 默认128K
 	}
 	else if( at.stack_size > 1024 * 1024 * 8 )
 	{
-		at.stack_size = 1024 * 1024 * 8;
+		at.stack_size = 1024 * 1024 * 8; //最大8M
 	}
 
 	if( at.stack_size & 0xFFF ) 
-	{
+	{   //内存对齐 4K B对A对齐，等同于 (B + (A + 1)) &= ~A;
 		at.stack_size &= ~0xFFF;
 		at.stack_size += 0x1000;
 	}
@@ -486,7 +487,7 @@ struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAt
 	
 	memset( lp,0,(long)(sizeof(stCoRoutine_t))); 
 
-
+	// 主协程不会存在 协程实际执行函数，主协程负责其他协程的调度
 	lp->env = env;
 	lp->pfn = pfn;
 	lp->arg = arg;
@@ -553,6 +554,12 @@ void co_release( stCoRoutine_t *co )
     co_free( co );
 }
 
+
+/*
+* co_swap 协程切换，将
+* @curr       : 
+* @pending_co : 
+*/
 void co_swap(stCoRoutine_t* curr, stCoRoutine_t* pending_co);
 
 void co_resume( stCoRoutine_t *co )
@@ -738,6 +745,12 @@ static short EpollEvent2Poll( uint32_t events )
 }
 
 static __thread stCoRoutineEnv_t* gCoEnvPerThread = NULL;
+
+/*
+* calloc 和 malloc的主要区别
+* malloc 分配的内存不会初始化，而calloc分配的空间全部初始化为0，这样就避免了可能的一些数据错误。
+*/
+
 
 void co_init_curr_thread_env()
 {

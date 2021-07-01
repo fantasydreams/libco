@@ -21,12 +21,14 @@
 
 #include "co_routine.h"
 #include "coctx.h"
-struct stCoRoutineEnv_t;
+struct stCoRoutineEnv_t;  //一个线程中的协程环境
 struct stCoSpec_t
 {
 	void *value;
 };
 
+
+//协程站内存
 struct stStackMem_t
 {
 	stCoRoutine_t* occupy_co;
@@ -45,28 +47,28 @@ struct stShareStack_t
 };
 
 
-
+//协程结构
 struct stCoRoutine_t
 {
-	stCoRoutineEnv_t *env;
-	pfn_co_routine_t pfn;
-	void *arg;
-	coctx_t ctx;
+	stCoRoutineEnv_t *env;  //本协程的执行环境
+	pfn_co_routine_t pfn;	//协程的实际执行函数
+	void *arg;				//协程函数的入餐参数
+	coctx_t ctx;			//协程的CPU上下文
 
-	char cStart;
-	char cEnd;
-	char cIsMain;
-	char cEnableSysHook;
-	char cIsShareStack;
+	char cStart;			//是否为协程的第一次执行
+	char cEnd;				//协程是否结束
+	char cIsMain;			//是否主协程  [libco的协程模型，主线程即为主协程，负责调度]
+	char cEnableSysHook;	//是否开启系统hook
+	char cIsShareStack;		//是否为共享栈
 
-	void *pvEnv;
+	void *pvEnv;  			//本协程独占私有区域
 
 	//char sRunStack[ 1024 * 128 ];
-	stStackMem_t* stack_mem;
+	stStackMem_t* stack_mem; //协程栈 堆空间 128k
 
 
 	//save satck buffer while confilct on same stack_buffer;
-	char* stack_sp; 
+	char* stack_sp;  		//
 	unsigned int save_size;
 	char* save_buffer;
 

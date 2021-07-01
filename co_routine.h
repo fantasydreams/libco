@@ -31,8 +31,8 @@ struct stShareStack_t; //共享栈结构
 //协程属性结构
 struct stCoRoutineAttr_t
 {
-	int stack_size;
-	stShareStack_t*  share_stack;
+	int stack_size;					// 协程栈大小，默认128k，最大8M
+	stShareStack_t*  share_stack;	// 指向共享栈，当stCoRoutine_t 	cIsShareStack 开启 后这个指针有效
 	stCoRoutineAttr_t()
 	{
 		stack_size = 128 * 1024;
@@ -46,12 +46,20 @@ typedef void *(*pfn_co_routine_t)( void * );
 
 //2.co_routine
 
+/*
+* co_create
+* @co ： co_create创建的协程数据
+* ppco： 生成协程，并将产生的协程各种数据保存至协程结构co
+* @attr：协程栈大小(128KB~8M)，如果为NULL，默认为128KB
+* @pfn：协程实际执行的 worker 函数 
+* @arg：协程worker函数的入参 参数
+*/
 int 	co_create( stCoRoutine_t **co,const stCoRoutineAttr_t *attr,void *(*routine)(void*),void *arg );
-void    co_resume( stCoRoutine_t *co );
-void    co_yield( stCoRoutine_t *co );
-void    co_yield_ct(); //ct = current thread
-void    co_release( stCoRoutine_t *co );
-void    co_reset(stCoRoutine_t * co); 
+void    co_resume( stCoRoutine_t *co ); 		// 启动协程co
+void    co_yield( stCoRoutine_t *co );			// 挂起协程
+void    co_yield_ct(); //ct = current thread	// 
+void    co_release( stCoRoutine_t *co );		// 删除协程
+void    co_reset(stCoRoutine_t * co); 			// 协程重置
 
 stCoRoutine_t *co_self();
 
