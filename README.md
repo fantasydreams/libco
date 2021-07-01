@@ -45,4 +45,5 @@ $ cmake ..
 $ make
 ```
 
-
+or use bazel
+bazel build :all
