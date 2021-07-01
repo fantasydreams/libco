@@ -32,3 +32,8 @@ README.md
 *.exe
 *.out
 *.app
+
+
+#build
+bazel*
+.vscode

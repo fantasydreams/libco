@@ -789,7 +789,18 @@ void OnPollPreparePfn( stTimeoutItem_t * ap,struct epoll_event &e,stTimeoutItemL
 	}
 }
 
-
+/*
+* libco的核心调度
+* 在此处调度三种事件：
+* 1. 被hook的io事件，该io事件是通过 co_poll co_poll_inner注册进来的
+* 2. 超时事件
+* 3. 用户主动使用poll的事件
+* 所以，如果用户用到了三种事件，必须得配合使用co_eventloop
+*
+* @param ctx 协程epoll管理器
+* @param pfn 每轮事件循环的最后会调用该函数
+* @param arg pfn 入参参数
+*/
 void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 {
 	if( !ctx->result )
