@@ -43,7 +43,7 @@ struct coctx_t
 	void *regs[ 14 ];
 #endif
 	size_t ss_size;  // stCoRoutine_t 中 stack_mem 协程栈 大小
-	char *ss_sp;   	 //	stCoRoutine_t 中 stack_mem 协程栈 栈顶指针
+	char *ss_sp;   	 //	stCoRoutine_t 中 stack_mem 协程栈 堆buffer首地址
 	
 };
 

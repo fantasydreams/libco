@@ -103,24 +103,24 @@ int coctx_make(coctx_t* ctx, coctx_pfn_t pfn, const void* s, const void* s1) {
 
   memset(ctx->regs, 0, sizeof(ctx->regs));
 
-  ctx->regs[kESP] = (char*)(sp) - sizeof(void*) * 2;
+  ctx->regs[kESP] = (char*)(sp) - sizeof(void*) * 2;  //栈顶指针
   return 0;
 }
 #elif defined(__x86_64__)
 int coctx_make(coctx_t* ctx, coctx_pfn_t pfn, const void* s, const void* s1) {
-  char* sp = ctx->ss_sp + ctx->ss_size - sizeof(void*);
+  char* sp = ctx->ss_sp + ctx->ss_size - sizeof(void*); 
   sp = (char*)((unsigned long)sp & -16LL);
 
   memset(ctx->regs, 0, sizeof(ctx->regs));
   void** ret_addr = (void**)(sp);
   *ret_addr = (void*)pfn;
 
-  ctx->regs[kRSP] = sp;
+  ctx->regs[kRSP] = sp;   //栈顶指针
 
-  ctx->regs[kRETAddr] = (char*)pfn;
+  ctx->regs[kRETAddr] = (char*)pfn; //协程函数指针
 
-  ctx->regs[kRDI] = (char*)s;
-  ctx->regs[kRSI] = (char*)s1;
+  ctx->regs[kRDI] = (char*)s;   //rdi 通常是第一个参数地址
+  ctx->regs[kRSI] = (char*)s1;  //rsi 通常是第二个参数地址
   return 0;
 }
 

@@ -273,7 +273,7 @@ stStackMem_t* co_alloc_stackmem(unsigned int stack_size)
 	stack_mem->occupy_co= NULL;
 	stack_mem->stack_size = stack_size;
 	stack_mem->stack_buffer = (char*)malloc(stack_size);
-	stack_mem->stack_bp = stack_mem->stack_buffer + stack_size;
+	stack_mem->stack_bp = stack_mem->stack_buffer + stack_size;  //满足栈的增长顺序，从高地址向低地址增加
 	return stack_mem;
 }
 
@@ -565,7 +565,7 @@ void co_swap(stCoRoutine_t* curr, stCoRoutine_t* pending_co);
 void co_resume( stCoRoutine_t *co )
 {
 	stCoRoutineEnv_t *env = co->env;
-	stCoRoutine_t *lpCurrRoutine = env->pCallStack[ env->iCallStackSize - 1 ];
+	stCoRoutine_t *lpCurrRoutine = env->pCallStack[ env->iCallStackSize - 1 ]; //当前的协程
 	if( !co->cStart )
 	{
 		coctx_make( &co->ctx,(coctx_pfn_t)CoRoutineFunc,co,0 );
@@ -759,7 +759,7 @@ void co_init_curr_thread_env()
 
 	env->iCallStackSize = 0;
 	struct stCoRoutine_t *self = co_create_env( env, NULL, NULL,NULL );
-	self->cIsMain = 1;
+	self->cIsMain = 1; //主协程
 
 	env->pending_co = NULL;
 	env->occupy_co = NULL;
@@ -1143,14 +1143,14 @@ static void OnSignalProcessEvent( stTimeoutItem_t * ap )
 stCoCondItem_t *co_cond_pop( stCoCond_t *link );
 int co_cond_signal( stCoCond_t *si )
 {
-	stCoCondItem_t * sp = co_cond_pop( si );
+	stCoCondItem_t * sp = co_cond_pop( si ); //取出一个wait cond
 	if( !sp ) 
 	{
 		return 0;
 	}
 	RemoveFromLink<stTimeoutItem_t,stTimeoutItemLink_t>( &sp->timeout );
 
-	AddTail( co_get_curr_thread_env()->pEpoll->pstActiveList,&sp->timeout );
+	AddTail( co_get_curr_thread_env()->pEpoll->pstActiveList,&sp->timeout ); //将协程和处理事件放到activelist
 
 	return 0;
 }
@@ -1173,8 +1173,8 @@ int co_cond_broadcast( stCoCond_t *si )
 int co_cond_timedwait( stCoCond_t *link,int ms )
 {
 	stCoCondItem_t* psi = (stCoCondItem_t*)calloc(1, sizeof(stCoCondItem_t));
-	psi->timeout.pArg = GetCurrThreadCo();
-	psi->timeout.pfnProcess = OnSignalProcessEvent;
+	psi->timeout.pArg = GetCurrThreadCo();  //将当前协程当作参数
+	psi->timeout.pfnProcess = OnSignalProcessEvent; //超时事件发生处理函数
 
 	if( ms > 0 )
 	{
@@ -1188,13 +1188,13 @@ int co_cond_timedwait( stCoCond_t *link,int ms )
 			return ret;
 		}
 	}
-	AddTail( link, psi);
+	AddTail( link, psi);  //加入当cond的消息同步链表中
 
-	co_yield_ct();
+	co_yield_ct();  //让出cpu使用权
 
-
-	RemoveFromLink<stCoCondItem_t,stCoCond_t>( psi );
-	free(psi);
+	//恢复协程
+	RemoveFromLink<stCoCondItem_t,stCoCond_t>( psi );  //从cond链表中删除本协程的事件
+	free(psi);//释放内存
 
 	return 0;
 }

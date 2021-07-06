@@ -34,7 +34,7 @@ struct stStackMem_t
 	stCoRoutine_t* occupy_co;
 	int stack_size;
 	char* stack_bp; //stack_buffer + stack_size
-	char* stack_buffer;
+	char* stack_buffer;  //	stack 堆上首地址
 
 };
 
@@ -68,7 +68,7 @@ struct stCoRoutine_t
 
 
 	//save satck buffer while confilct on same stack_buffer;
-	char* stack_sp;  		//
+	char* stack_sp;  		//协程当前的栈顶指针
 	unsigned int save_size;
 	char* save_buffer;
 
