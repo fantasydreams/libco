@@ -423,7 +423,7 @@ inline void TakeAllTimeout( stTimeout_t *apTimeout,unsigned long long allNow,stT
 	{
 		return ;
 	}
-	int cnt = allNow - apTimeout->ullStart + 1;
+	int cnt = allNow - apTimeout->ullStart + 1; //因为co_epoll是1ms作为超时时间的
 	if( cnt > apTimeout->iItemSize )
 	{
 		cnt = apTimeout->iItemSize;
@@ -444,15 +444,15 @@ inline void TakeAllTimeout( stTimeout_t *apTimeout,unsigned long long allNow,stT
 }
 static int CoRoutineFunc( stCoRoutine_t *co,void * )
 {
-	if( co->pfn )
+	if( co->pfn ) //如果有注册协程函数，则执行
 	{
 		co->pfn( co->arg );
 	}
-	co->cEnd = 1;
+	co->cEnd = 1;  //本协程完成执行
 
 	stCoRoutineEnv_t *env = co->env;
 
-	co_yield_env( env );
+	co_yield_env( env ); //让出cpu使用权
 
 	return 0;
 }
@@ -865,6 +865,12 @@ void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 		{
 
 			PopHead<stTimeoutItem_t,stTimeoutItemLink_t>( active );
+			//如果是超时事件，而且时间没超时。
+ 			/*触发条件：如果向时间轮加入的计时器超时时间过大且超过了最大计时时间，然后虽然会报error但是还会
+    		* 加入到时间轮中。后来将它取出时，它没有真正的超时，也就是绝对超时时间大于当前时间，就会触发这个条件。
+			* 这样的话，我们将它重新加入到时间轮中继续等待，如此循环，直到真正满足它的时间点后就不会触发这个条，
+			* 这样就很完美地解决了时间过长无法存入的问题。
+			*/
             if (lp->bTimeout && now < lp->ullExpireTime) 
 			{
 				int ret = AddTimeout(ctx->pTimeout, lp, now);
@@ -875,6 +881,9 @@ void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 					continue;
 				}
 			}
+
+			//此函数会使当前协程（主协程）放弃执行权，转到co_poll_inner继续执行。
+			//poll_inner上交执行权之后会从这继续执行，完成收尾工作，lp会被从链表中摘下销毁。
 			if( lp->pfnProcess )
 			{
 				lp->pfnProcess( lp );
@@ -1149,7 +1158,7 @@ static void OnSignalProcessEvent( stTimeoutItem_t * ap )
 stCoCondItem_t *co_cond_pop( stCoCond_t *link );
 int co_cond_signal( stCoCond_t *si )
 {
-	stCoCondItem_t * sp = co_cond_pop( si ); //取出一个wait cond item
+	stCoCondItem_t * sp = co_cond_pop( si ); //取出一个wait cond(谁先注册谁就先被取出来，所以会是顺序交叉执行)
 	if( !sp ) 
 	{
 		return 0;

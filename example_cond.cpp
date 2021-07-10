@@ -56,8 +56,9 @@ void* Consumer(void* args)
 		if (env->task_queue.empty())
 		{
 			co_cond_timedwait(env->cond, -1);
-			printf("Consumer wake up\n");
-			// continue;
+			continue; 
+			//这个continue如果是-1则可以省去，如果不是-1则不能省，
+			//不然超时之后生产者没有生产数据的话后面的代码将会导致段错误
 		}
 		stTask_t* task = env->task_queue.front();
 		env->task_queue.pop();
@@ -66,10 +67,33 @@ void* Consumer(void* args)
 	}
 	return NULL;
 }
+
+void* Consumer2(void* args)
+{
+	co_enable_hook_sys();
+	stEnv_t* env = (stEnv_t*)args;
+	while (true)
+	{
+		if (env->task_queue.empty())
+		{
+			co_cond_timedwait(env->cond, -1);
+			continue;
+		}
+		stTask_t* task = env->task_queue.front();
+		env->task_queue.pop();
+		printf("%s:%d consume2 task %d\n", __func__, __LINE__, task->id);
+		free(task);
+	}
+	return NULL;
+}
 int main()
 {
 	stEnv_t* env = new stEnv_t;
 	env->cond = co_cond_alloc();
+
+	stCoRoutine_t* consumer_routine2;
+	co_create(&consumer_routine2, NULL, Consumer2, env);
+	co_resume(consumer_routine2);
 
 	stCoRoutine_t* consumer_routine;
 	co_create(&consumer_routine, NULL, Consumer, env);
