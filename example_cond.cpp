@@ -43,7 +43,7 @@ void* Producer(void* args)
 		env->task_queue.push(task);
 		printf("%s:%d produce task %d\n", __func__, __LINE__, task->id);
 		co_cond_signal(env->cond);
-		poll(NULL, 0, 1000);
+		poll(NULL, 0, 1000); //每1000ms唤醒一次
 	}
 	return NULL;
 }
@@ -56,6 +56,7 @@ void* Consumer(void* args)
 		if (env->task_queue.empty())
 		{
 			co_cond_timedwait(env->cond, -1);
+			printf("Consumer wake up\n");
 			// continue;
 		}
 		stTask_t* task = env->task_queue.front();

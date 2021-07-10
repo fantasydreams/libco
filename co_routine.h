@@ -77,9 +77,12 @@ stCoEpoll_t * 	co_get_epoll_ct(); //ct = current thread
 
 //5.hook syscall ( poll/read/write/recv/send/recvfrom/sendto )
 
-void 	co_enable_hook_sys();  
-void 	co_disable_hook_sys();  
-bool 	co_is_enable_sys_hook();
+/*
+* 进行系统 io 函数的时候才会调用到 libco 的函数而不是原系统函数
+*/
+void 	co_enable_hook_sys();  		//设置当前线程中正在运行的协程使用hook系统调用，每个协程这个信号是相互独立的
+void 	co_disable_hook_sys();  	//取消当前线程中正在运行的协程使用hook系统调用
+bool 	co_is_enable_sys_hook();	//获取是否开启hook系统调用
 
 //6.sync
 struct stCoCond_t;
