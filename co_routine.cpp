@@ -830,6 +830,7 @@ void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 
 	for(;;)
 	{
+		printf("main coroutine co_eventloop in\n");
 		int ret = co_epoll_wait( ctx->iEpollFd,result,stCoEpoll_t::_EPOLL_SIZE, 1 );
 
 		stTimeoutItemLink_t *active = (ctx->pstActiveList);
@@ -949,12 +950,17 @@ stCoRoutine_t *GetCurrThreadCo( )
 	return GetCurrCo(env);
 }
 
-
+/*
+* If timeout is greater than zero, it specifies a maximum interval (in milliseconds) 
+* to wait for any file descriptor to become ready. If timeout is zero, 
+* then poll() will return without blocking. 
+* If the value of timeout is -1, the poll blocks indefinitely.
+*/
 
 typedef int (*poll_pfn_t)(struct pollfd fds[], nfds_t nfds, int timeout);
 int co_poll_inner( stCoEpoll_t *ctx,struct pollfd fds[], nfds_t nfds, int timeout, poll_pfn_t pollfunc)
 {
-    if (timeout == 0)
+    if (timeout == 0)  //如果是0，直接用系统调用，非阻塞
 	{
 		return pollfunc(fds, nfds, timeout);
 	}

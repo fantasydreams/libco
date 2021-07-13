@@ -43,7 +43,7 @@ void* Producer(void* args)
 		env->task_queue.push(task);
 		printf("%s:%d produce task %d\n", __func__, __LINE__, task->id);
 		co_cond_signal(env->cond);
-		poll(NULL, 0, 1000);
+		poll(NULL, 0, 1000); //每1000ms唤醒一次
 	}
 	return NULL;
 }

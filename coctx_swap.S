@@ -22,15 +22,26 @@
 #endif
 coctx_swap:
 
+;-------------
+; 32 bit
+; | regs[0]: ret |
+; | regs[1]: ebx |
+; | regs[2]: ecx |
+; | regs[3]: edx |
+; | regs[4]: edi |
+; | regs[5]: esi |
+; | regs[6]: ebp |
+; | regs[7]: eax |  = esp
+
 #if defined(__i386__)
-    movl 4(%esp), %eax
-    movl %esp,  28(%eax)
-    movl %ebp, 24(%eax)
-    movl %esi, 20(%eax)
-    movl %edi, 16(%eax)
-    movl %edx, 12(%eax)
-    movl %ecx, 8(%eax)
-    movl %ebx, 4(%eax)
+    movl 4(%esp), %eax      ;eax = *(esp+4) 取第一个参数coctx_t
+    movl %esp,  28(%eax)    ;coctx_t.regs[7] = esp
+    movl %ebp, 24(%eax)     ;coctx_t.regs[6] = ebp
+    movl %esi, 20(%eax)     ;coctx_t.regs[5] = esi
+    movl %edi, 16(%eax)     ;coctx_t.regs[4] = edi
+    movl %edx, 12(%eax)     ;coctx_t.regs[3] = edx
+    movl %ecx, 8(%eax)      ;coctx_t.regs[2] = ecx
+    movl %ebx, 4(%eax)      ;coctx_t.regs[1] = ebx
 
 
     movl 8(%esp), %eax
@@ -45,7 +56,7 @@ coctx_swap:
 	ret
 
 #elif defined(__x86_64__)
-	leaq (%rsp),%rax
+	  leaq (%rsp),%rax
     movq %rax, 104(%rdi)
     movq %rbx, 96(%rdi)
     movq %rcx, 88(%rdi)
@@ -79,5 +90,23 @@ coctx_swap:
 		pushq 72(%rsi)
 
     movq 64(%rsi), %rsi
-	ret
+	  ret
 #endif
+
+
+;-------------
+; 64 bit
+; low | regs[0]: r15 |
+;    | regs[1]: r14 |
+;    | regs[2]: r13 |
+;    | regs[3]: r12 |
+;    | regs[4]: r9  |
+;    | regs[5]: r8  |
+;    | regs[6]: rbp |
+;    | regs[7]: rdi |
+;    | regs[8]: rsi |
+;    | regs[9]: ret |  ;ret func addr
+;    | regs[10]: rdx | ;R10, R11为callee saved register, 由被调用函数保存
+;    | regs[11]: rcx |
+;    | regs[12]: rbx |
+; hig | regs[13]: rsp |

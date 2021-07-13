@@ -42,8 +42,8 @@ struct coctx_t
 #else
 	void *regs[ 14 ];
 #endif
-	size_t ss_size;  // stCoRoutine_t 中 stack_mem 协程栈 大小
-	char *ss_sp;   	 //	stCoRoutine_t 中 stack_mem 协程栈 堆buffer首地址
+	size_t ss_size;  // stCoRoutine_t 中 stack_mem 协程栈 剩余大小
+	char *ss_sp;   	 //	stCoRoutine_t 中 stack_mem 协程栈 buffer 首地址
 	
 };
 
