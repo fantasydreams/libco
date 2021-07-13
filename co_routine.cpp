@@ -296,11 +296,11 @@ stShareStack_t* co_alloc_sharestack(int count, int stack_size)
 
 static stStackMem_t* co_get_stackmem(stShareStack_t* share_stack)
 {
-	if (!share_stack)
+	if (!share_stack)  //共享栈需要用户自行申请后传给协程
 	{
 		return NULL;
 	}
-	int idx = share_stack->alloc_idx % share_stack->count;
+	int idx = share_stack->alloc_idx % share_stack->count;  //顺序轮转分配
 	share_stack->alloc_idx++;
 
 	return share_stack->stack_array[idx];
@@ -351,6 +351,11 @@ struct stTimeoutItemLink_t
 	stTimeoutItem_t *tail;
 
 };
+
+/*
+* 毫秒级任务定时管理结构
+* 
+*/
 struct stTimeout_t
 {
 	stTimeoutItemLink_t *pItems;

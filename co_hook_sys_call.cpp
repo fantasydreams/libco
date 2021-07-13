@@ -580,9 +580,9 @@ extern int co_poll_inner( stCoEpoll_t *ctx,struct pollfd fds[], nfds_t nfds, int
 
 int poll(struct pollfd fds[], nfds_t nfds, int timeout)
 {
-	HOOK_SYS_FUNC( poll );
+	HOOK_SYS_FUNC( poll ); //获取系统的poll函数地址
 
-	if (!co_is_enable_sys_hook() || timeout == 0) {
+	if (!co_is_enable_sys_hook() || timeout == 0) {  //如果不开启系统调用的hook，则使用系统调用
 		return g_sys_poll_func(fds, nfds, timeout);
 	}
 	pollfd *fds_merge = NULL;

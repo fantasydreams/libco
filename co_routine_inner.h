@@ -31,7 +31,7 @@ struct stCoSpec_t
 //协程站内存
 struct stStackMem_t
 {
-	stCoRoutine_t* occupy_co;
+	stCoRoutine_t* occupy_co; //共享栈 指向现在占据本栈的协程
 	int stack_size;
 	char* stack_bp; //stack_buffer + stack_size
 	char* stack_buffer;  //	stack 堆上首地址
@@ -40,10 +40,10 @@ struct stStackMem_t
 
 struct stShareStack_t
 {
-	unsigned int alloc_idx;
-	int stack_size;
-	int count;
-	stStackMem_t** stack_array;
+	unsigned int alloc_idx;  // stack_array中我们在下一次调用中应该使用的那个共享栈的index
+	int stack_size;			 // 
+	int count;			     // sizeof(stack_array) / sizeof(stack_array[0])
+	stStackMem_t** stack_array;  //协程栈的实际堆空间
 };
 
 
