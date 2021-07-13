@@ -70,7 +70,7 @@ enum {
 //    | regs[7]: rdi |
 //    | regs[8]: rsi |
 //    | regs[9]: ret |  //ret func addr
-//    | regs[10]: rdx |
+//    | regs[10]: rdx | //R10, R11为callee saved register, 由被调用函数保存
 //    | regs[11]: rcx |
 //    | regs[12]: rbx |
 // hig | regs[13]: rsp |
