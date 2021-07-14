@@ -34,7 +34,7 @@ coctx_swap:
 ; | regs[7]: eax |  = esp
 
 #if defined(__i386__)
-    movl 4(%esp), %eax      ;eax = *(esp+4) 取第一个参数coctx_t
+    movl 4(%esp), %eax      ;eax = *(esp+4)  &(curr->ctx), +4个字节是因为push压栈上个函数的下一条指令的地址
     movl %esp,  28(%eax)    ;coctx_t.regs[7] = esp
     movl %ebp, 24(%eax)     ;coctx_t.regs[6] = ebp
     movl %esi, 20(%eax)     ;coctx_t.regs[5] = esi
@@ -43,8 +43,8 @@ coctx_swap:
     movl %ecx, 8(%eax)      ;coctx_t.regs[2] = ecx
     movl %ebx, 4(%eax)      ;coctx_t.regs[1] = ebx
 
-
-    movl 8(%esp), %eax
+    ;将要运行的coroutine 的上下问信息恢复到cpu
+    movl 8(%esp), %eax      ;压栈从右往左，这里是 &(pending_co->ctx)
     movl 4(%eax), %ebx
     movl 8(%eax), %ecx
     movl 12(%eax), %edx
@@ -56,8 +56,8 @@ coctx_swap:
 	ret
 
 #elif defined(__x86_64__)
-	  leaq (%rsp),%rax
-    movq %rax, 104(%rdi)
+	  leaq (%rsp),%rax        ;获取上个函数下一条指令的地址加载到rax
+    movq %rax, 104(%rdi)    ;
     movq %rbx, 96(%rdi)
     movq %rcx, 88(%rdi)
     movq %rdx, 80(%rdi)
@@ -110,3 +110,13 @@ coctx_swap:
 ;    | regs[11]: rcx |
 ;    | regs[12]: rbx |
 ; hig | regs[13]: rsp |
+
+
+; 寄存器寻址
+; movq %rax, %rdx
+; 立即寻址
+; movq $0x123, %edx
+; 间接寻址
+; movq (%rbx), %rax
+; 变址寻址
+; movq 8(%rax), %rdx
