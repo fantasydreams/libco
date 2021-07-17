@@ -37,3 +37,4 @@ README.md
 #build
 bazel*
 .vscode
+.DS_Store

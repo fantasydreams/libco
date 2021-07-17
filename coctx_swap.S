@@ -22,16 +22,77 @@
 #endif
 coctx_swap:
 
-;-------------
-; 32 bit
-; | regs[0]: ret |
-; | regs[1]: ebx |
-; | regs[2]: ecx |
-; | regs[3]: edx |
-; | regs[4]: edi |
-; | regs[5]: esi |
-; | regs[6]: ebp |
-; | regs[7]: eax |  = esp
+#if defined(__i386__)
+    movl 4(%esp), %eax
+    movl %esp,  28(%eax)
+    movl %ebp, 24(%eax)
+    movl %esi, 20(%eax)
+    movl %edi, 16(%eax)
+    movl %edx, 12(%eax)
+    movl %ecx, 8(%eax)
+    movl %ebx, 4(%eax)
+
+    movl 8(%esp), %eax
+    movl 4(%eax), %ebx
+    movl 8(%eax), %ecx
+    movl 12(%eax), %edx
+    movl 16(%eax), %edi
+    movl 20(%eax), %esi
+    movl 24(%eax), %ebp
+    movl 28(%eax), %esp
+
+	ret
+
+#elif defined(__x86_64__)
+	  leaq (%rsp),%rax
+    movq %rax, 104(%rdi)    
+    movq %rbx, 96(%rdi)
+    movq %rcx, 88(%rdi)
+    movq %rdx, 80(%rdi)
+	  movq 0(%rax), %rax
+	  movq %rax, 72(%rdi) 
+    movq %rsi, 64(%rdi)
+	  movq %rdi, 56(%rdi)
+    movq %rbp, 48(%rdi)
+    movq %r8, 40(%rdi)
+    movq %r9, 32(%rdi)
+    movq %r12, 24(%rdi)
+    movq %r13, 16(%rdi)
+    movq %r14, 8(%rdi)
+    movq %r15, (%rdi)
+	  xorq %rax, %rax
+
+    movq 48(%rsi), %rbp
+    movq 104(%rsi), %rsp
+    movq (%rsi), %r15
+    movq 8(%rsi), %r14
+    movq 16(%rsi), %r13
+    movq 24(%rsi), %r12
+    movq 32(%rsi), %r9
+    movq 40(%rsi), %r8
+    movq 56(%rsi), %rdi
+    movq 80(%rsi), %rdx
+    movq 88(%rsi), %rcx
+    movq 96(%rsi), %rbx
+		leaq 8(%rsp), %rsp
+		pushq 72(%rsi)
+
+    movq 64(%rsi), %rsi
+	  ret
+#endif
+
+/*
+*-------------
+* 32 bit
+* | regs[0]: ret |
+* | regs[1]: ebx |
+* | regs[2]: ecx |
+* | regs[3]: edx |
+* | regs[4]: edi |
+* | regs[5]: esi |
+* | regs[6]: ebp |
+* | regs[7]: eax |  = esp
+
 
 #if defined(__i386__)
     movl 4(%esp), %eax      ;eax = *(esp+4)  &(curr->ctx), +4个字节是因为push压栈上个函数的下一条指令的地址
@@ -57,7 +118,7 @@ coctx_swap:
 
 #elif defined(__x86_64__)
 	  leaq (%rsp),%rax        ;获取上个函数下一条指令的地址加载到rax
-    movq %rax, 104(%rdi)    ;
+    movq %rax, 104(%rdi)    
     movq %rbx, 96(%rdi)
     movq %rcx, 88(%rdi)
     movq %rdx, 80(%rdi)
@@ -94,29 +155,30 @@ coctx_swap:
 #endif
 
 
-;-------------
-; 64 bit
-; low | regs[0]: r15 |
-;    | regs[1]: r14 |
-;    | regs[2]: r13 |
-;    | regs[3]: r12 |
-;    | regs[4]: r9  |
-;    | regs[5]: r8  |
-;    | regs[6]: rbp |
-;    | regs[7]: rdi |
-;    | regs[8]: rsi |
-;    | regs[9]: ret |  ;ret func addr
-;    | regs[10]: rdx | ;R10, R11为callee saved register, 由被调用函数保存
-;    | regs[11]: rcx |
-;    | regs[12]: rbx |
-; hig | regs[13]: rsp |
+* -------------
+* 64 bit
+* low | regs[0]: r15 |
+*    | regs[1]: r14 |
+*    | regs[2]: r13 |
+*    | regs[3]: r12 |
+*    | regs[4]: r9  |
+*    | regs[5]: r8  |
+*    | regs[6]: rbp |
+*    | regs[7]: rdi |
+*    | regs[8]: rsi |
+*    | regs[9]: ret |  ;ret func addr
+*    | regs[10]: rdx | ;R10, R11为callee saved register, 由被调用函数保存
+*    | regs[11]: rcx |
+*    | regs[12]: rbx |
+* hig | regs[13]: rsp |
 
 
-; 寄存器寻址
-; movq %rax, %rdx
-; 立即寻址
-; movq $0x123, %edx
-; 间接寻址
-; movq (%rbx), %rax
-; 变址寻址
-; movq 8(%rax), %rdx
+* 寄存器寻址
+* movq %rax, %rdx
+* 立即寻址
+* movq $0x123, %edx
+* 间接寻址
+* movq (%rbx), %rax
+* 变址寻址
+* movq 8(%rax), %rdx
+*/
