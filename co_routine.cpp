@@ -53,8 +53,9 @@ struct stCoRoutineEnv_t
 {
 	stCoRoutine_t *pCallStack[ 128 ];
 	int iCallStackSize;
-	stCoEpoll_t *pEpoll; //该协程的epoll实例
+	stCoEpoll_t *pEpoll; //该协程的epoll实例，该线程的协程调度器
 
+	// 在使用共享栈模式拷贝栈内存时记录相应的 coroutine
 	//for copy stack log lastco and nextco
 	stCoRoutine_t* pending_co;
 	stCoRoutine_t* occupy_co;
@@ -492,7 +493,7 @@ struct stCoRoutine_t *co_create_env( stCoRoutineEnv_t * env, const stCoRoutineAt
 	
 	memset( lp,0,(long)(sizeof(stCoRoutine_t))); 
 
-	// 主协程不会存在 协程实际执行函数，主协程负责其他协程的调度
+	// 主协程不会存在 协程实际执行函数，main coroutine 用来运行该线程主逻辑
 	lp->env = env;
 	lp->pfn = pfn;
 	lp->arg = arg;
@@ -764,12 +765,12 @@ void co_init_curr_thread_env()
 
 	env->iCallStackSize = 0;
 	struct stCoRoutine_t *self = co_create_env( env, NULL, NULL,NULL );
-	self->cIsMain = 1; //主协程
+	self->cIsMain = 1; //主协程，main coroutine 用来运行该线程主逻辑
 
 	env->pending_co = NULL;
 	env->occupy_co = NULL;
 
-	coctx_init( &self->ctx );
+	coctx_init( &self->ctx );  //主协程用于执行核心代码。这里的上下文用于保存线程核心流程的上下文
 
 	env->pCallStack[ env->iCallStackSize++ ] = self;
 
@@ -1163,6 +1164,7 @@ static void OnSignalProcessEvent( stTimeoutItem_t * ap )
 stCoCondItem_t *co_cond_pop( stCoCond_t *link );
 int co_cond_signal( stCoCond_t *si )
 {
+	if( !si ) return 0;
 	stCoCondItem_t * sp = co_cond_pop( si ); //取出一个wait cond(谁先注册谁就先被取出来，所以会是顺序交叉执行)
 	if( !sp ) 
 	{
@@ -1176,6 +1178,7 @@ int co_cond_signal( stCoCond_t *si )
 }
 int co_cond_broadcast( stCoCond_t *si )
 {
+	if( !si ) return 0;
 	for(;;)
 	{
 		stCoCondItem_t * sp = co_cond_pop( si );
@@ -1192,6 +1195,7 @@ int co_cond_broadcast( stCoCond_t *si )
 
 int co_cond_timedwait( stCoCond_t *link,int ms )
 {
+	if( !link )return 0;
 	stCoCondItem_t* psi = (stCoCondItem_t*)calloc(1, sizeof(stCoCondItem_t));
 	psi->timeout.pArg = GetCurrThreadCo();  //将当前协程当作参数
 	psi->timeout.pfnProcess = OnSignalProcessEvent; //超时事件发生处理函数
@@ -1224,6 +1228,7 @@ stCoCond_t *co_cond_alloc()
 }
 int co_cond_free( stCoCond_t * cc )
 {
+	if( !cc ) return 0;
 	free( cc );
 	return 0;
 }
@@ -1231,6 +1236,7 @@ int co_cond_free( stCoCond_t * cc )
 
 stCoCondItem_t *co_cond_pop( stCoCond_t *link )
 {
+	if( !link ) return 0;
 	stCoCondItem_t *p = link->head;
 	if( p )
 	{

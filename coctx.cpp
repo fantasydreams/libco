@@ -96,20 +96,20 @@ int coctx_make(coctx_t* ctx, coctx_pfn_t pfn, const void* s, const void* s1) {
   sp = (char*)((unsigned long)sp & -16L);
 
   coctx_param_t* param = (coctx_param_t*)sp;
-  void** ret_addr = (void**)(sp - sizeof(void*) * 2);
+  void** ret_addr = (void**)(sp - sizeof(void*));
   *ret_addr = (void*)pfn;
   param->s1 = s;
-  param->s2 = s1;
+  param->s2 = s1; //这里符合栈从右往左压栈
 
   memset(ctx->regs, 0, sizeof(ctx->regs));
 
-  ctx->regs[kESP] = (char*)(sp) - sizeof(void*) * 2;  //栈顶指针
+  ctx->regs[kESP] = (char*)(sp) - sizeof(void*);  //栈顶指针返回地址，指向pfn
   return 0;
 }
 #elif defined(__x86_64__)
 int coctx_make(coctx_t* ctx, coctx_pfn_t pfn, const void* s, const void* s1) {
   char* sp = ctx->ss_sp + ctx->ss_size - sizeof(void*); 
-  sp = (char*)((unsigned long)sp & -16LL);
+  sp = (char*)((unsigned long)sp & -16LL);  //对应的地址是新的协程执行的栈空间，即进入到pfn中能够使用的栈空间。
 
   memset(ctx->regs, 0, sizeof(ctx->regs));
   void** ret_addr = (void**)(sp);
