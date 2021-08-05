@@ -765,7 +765,7 @@ void co_init_curr_thread_env()
 
 	env->iCallStackSize = 0;
 	struct stCoRoutine_t *self = co_create_env( env, NULL, NULL,NULL );
-	self->cIsMain = 1; //主协程，main coroutine 用来运行该线程主逻辑
+	self->cIsMain = 1; //主协程，main coroutine 用来运行该线程主逻辑，栈为系统栈，非主协程使用的是用户自行申请的栈（实则为堆）
 
 	env->pending_co = NULL;
 	env->occupy_co = NULL;
@@ -961,7 +961,7 @@ stCoRoutine_t *GetCurrThreadCo( )
 typedef int (*poll_pfn_t)(struct pollfd fds[], nfds_t nfds, int timeout);
 int co_poll_inner( stCoEpoll_t *ctx,struct pollfd fds[], nfds_t nfds, int timeout, poll_pfn_t pollfunc)
 {
-    if (timeout == 0)  //如果是0，直接用系统调用，非阻塞
+    if (timeout == 0)  //如果是0，直接用系统调用，阻塞
 	{
 		return pollfunc(fds, nfds, timeout);
 	}
@@ -991,7 +991,7 @@ int co_poll_inner( stCoEpoll_t *ctx,struct pollfd fds[], nfds_t nfds, int timeou
 	}
 	memset( arg.pPollItems,0,nfds * sizeof(stPollItem_t) );
 
-	arg.pfnProcess = OnPollProcessEvent;
+	arg.pfnProcess = OnPollProcessEvent;  //事件就绪或者超时时唤醒协程
 	arg.pArg = GetCurrCo( co_get_curr_thread_env() );
 	
 	
@@ -1001,7 +1001,7 @@ int co_poll_inner( stCoEpoll_t *ctx,struct pollfd fds[], nfds_t nfds, int timeou
 		arg.pPollItems[i].pSelf = arg.fds + i;
 		arg.pPollItems[i].pPoll = &arg;
 
-		arg.pPollItems[i].pfnPrepare = OnPollPreparePfn;
+		arg.pPollItems[i].pfnPrepare = OnPollPreparePfn; //切回协程之前的预处理函数
 		struct epoll_event &ev = arg.pPollItems[i].stEvent;
 
 		if( fds[i].fd > -1 )

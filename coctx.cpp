@@ -103,7 +103,7 @@ int coctx_make(coctx_t* ctx, coctx_pfn_t pfn, const void* s, const void* s1) {
 
   memset(ctx->regs, 0, sizeof(ctx->regs));
 
-  ctx->regs[kESP] = (char*)(sp) - sizeof(void*);  //栈顶指针返回地址，指向pfn
+  ctx->regs[kESP] = (char*)(sp) - sizeof(void*);  //栈顶指针，存的返回地址，指向pfn
   return 0;
 }
 #elif defined(__x86_64__)

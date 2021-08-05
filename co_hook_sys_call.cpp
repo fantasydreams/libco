@@ -192,6 +192,10 @@ static inline rpchook_t * get_by_fd( int fd )
 	}
 	return NULL;
 }
+
+/*
+* 当开启协程sys hook之后，alloc_by_fd分配rpchook_t用于存储超时信息，flag等信息
+*/
 static inline rpchook_t * alloc_by_fd( int fd )
 {
 	if( fd > -1 && fd < (int)sizeof(g_rpchook_socket_fd) / (int)sizeof(g_rpchook_socket_fd[0]) )
@@ -259,7 +263,7 @@ int connect(int fd, const struct sockaddr *address, socklen_t address_len)
 		return g_sys_connect_func(fd,address,address_len);
 	}
 
-	//1.sys call
+	//1.sys call，对于开启了hook的，libco会打上nonblock的标志，所以这里不回阻塞
 	int ret = g_sys_connect_func( fd,address,address_len );
 
 	rpchook_t *lp = get_by_fd( fd );
@@ -299,21 +303,21 @@ int connect(int fd, const struct sockaddr *address, socklen_t address_len)
 
 	if( pf.revents & POLLOUT ) //connect succ
 	{
-    // 3.check getsockopt ret
-    int err = 0;
-    socklen_t errlen = sizeof(err);
-    ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &errlen);
-    if (ret < 0) {
-      return ret;
-    } else if (err != 0) {
-      errno = err;
-      return -1;
+		// 3.check getsockopt ret
+		int err = 0;
+		socklen_t errlen = sizeof(err);
+		ret = getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &errlen);
+		if (ret < 0) {
+			return ret;
+		} else if (err != 0) {
+			errno = err;
+			return -1;
+		}
+		errno = 0;
+		return 0;
     }
-    errno = 0;
-    return 0;
-  }
 
-  errno = ETIMEDOUT;
+    errno = ETIMEDOUT;
 	return ret;
 }
 
@@ -686,7 +690,7 @@ int fcntl(int fildes, int cmd, ...)
 		}
 		case F_GETFL:
 		{
-			ret = g_sys_fcntl_func( fildes,cmd );
+			ret = g_sys_fcntl_func( fildes,cmd );	//Getflag
 			if (lp && !(lp->user_flag & O_NONBLOCK)) {
 				ret = ret & (~O_NONBLOCK);
 			}
@@ -698,7 +702,7 @@ int fcntl(int fildes, int cmd, ...)
 			int flag = param;
 			if( co_is_enable_sys_hook() && lp )
 			{
-				flag |= O_NONBLOCK;
+				flag |= O_NONBLOCK; //打上O_NONBLOCK标注，这里是libco hook 系统调用且能进行协程调度的核心
 			}
 			ret = g_sys_fcntl_func( fildes,cmd,flag );
 			if( 0 == ret && lp )

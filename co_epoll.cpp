@@ -62,7 +62,7 @@ private:
 	static const int row_size = 1024;
 	static const int col_size = 1024;
 
-	void **m_pp[ 1024 ];
+	void **m_pp[ row_size ];
 public:
 	clsFdMap()
 	{
@@ -70,7 +70,7 @@ public:
 	}
 	~clsFdMap()
 	{
-		for(int i=0;i<sizeof(m_pp)/sizeof(m_pp[0]);i++)
+		for(int i = 0; i < row_size; i++)
 		{
 			if( m_pp[i] ) 
 			{
@@ -86,8 +86,8 @@ public:
 	}
 	inline int set( int fd,const void * ptr )
 	{
-		int idx = fd / row_size;
-		if( idx < 0 || idx >= sizeof(m_pp)/sizeof(m_pp[0]) )
+		int idx = fd / col_size;
+		if( idx < 0 || idx >= row_size )
 		{
 			assert( __LINE__ == 0 );
 			return -__LINE__;
@@ -101,8 +101,8 @@ public:
 	}
 	inline void *get( int fd )
 	{
-		int idx = fd / row_size;
-		if( idx < 0 || idx >= sizeof(m_pp)/sizeof(m_pp[0]) )
+		int idx = fd / col_size;
+		if( idx < 0 || idx >= row_size )
 		{
 			return NULL;
 		}
@@ -271,7 +271,7 @@ int co_epoll_ctl( int epfd,int op,int fd,struct epoll_event * ev )
 		}
 		if( ev->events & EPOLLOUT )
 		{
-				//2.add
+			//2.add
 			struct kevent kev = { 0 };
 			EV_SET( &kev,fd,EVFILT_WRITE,EV_ADD,0,0,ptr );
 			ret = kevent( epfd, &kev,1, NULL,0, &t );
