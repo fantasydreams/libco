@@ -607,13 +607,14 @@ int poll(struct pollfd fds[], nfds_t nfds, int timeout)
 		}
 	}
 
+	//对于有相同的fd，把相应的事件合并到统一个fd上
 	int ret = 0;
 	if (nfds_merge == nfds || nfds == 1) {
 		ret = co_poll_inner(co_get_epoll_ct(), fds, nfds, timeout, g_sys_poll_func);
 	} else {
 		ret = co_poll_inner(co_get_epoll_ct(), fds_merge, nfds_merge, timeout,
 				g_sys_poll_func);
-		if (ret > 0) {
+		if (ret > 0) { //还原merge到前，并写对应的events
 			for (size_t i = 0; i < nfds; i++) {
 				it = m.find(fds[i].fd);
 				if (it != m.end()) {
