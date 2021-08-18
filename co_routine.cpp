@@ -332,7 +332,7 @@ struct stTimeoutItem_t
 
 	enum
 	{
-		eMaxTimeout = 40 * 1000 //40s
+		eMaxTimeout = 40 * 1000 //40s，时间轮定时器一轮的最大时长40s
 	};
 	stTimeoutItem_t *pPrev;
 	stTimeoutItem_t *pNext;
@@ -384,6 +384,7 @@ void FreeTimeout( stTimeout_t *apTimeout )
 }
 int AddTimeout( stTimeout_t *apTimeout,stTimeoutItem_t *apItem ,unsigned long long allNow )
 {
+	//初始时间
 	if( apTimeout->ullStart == 0 )
 	{
 		apTimeout->ullStart = allNow;
@@ -791,18 +792,21 @@ void OnPollProcessEvent( stTimeoutItem_t * ap )
 void OnPollPreparePfn( stTimeoutItem_t * ap,struct epoll_event &e,stTimeoutItemLink_t *active )
 {
 	stPollItem_t *lp = (stPollItem_t *)ap;
+	// 把epoll此次触发的事件转换成poll中的事件
 	lp->pSelf->revents = EpollEvent2Poll( e.events );
 
-
+	
 	stPoll_t *pPoll = lp->pPoll;
 	pPoll->iRaiseCnt++;
+	// 已经触发的事件数加一
 
 	if( !pPoll->iAllEventDetach )
 	{
 		pPoll->iAllEventDetach = 1;
-
+		// 若此事件还未被触发过，设置已经被触发的标志
 		RemoveFromLink<stTimeoutItem_t,stTimeoutItemLink_t>( pPoll );
-
+		// 将该事件从时间轮中移除
+		// 因为事件已经触发了，肯定不能再超时了，并将其添加到active列表
 		AddTail( active,pPoll );
 
 	}
@@ -897,6 +901,8 @@ void co_eventloop( stCoEpoll_t *ctx,pfn_co_eventloop_t pfn,void *arg )
 
 			lp = active->head;
 		}
+
+		//主协程的协程函数，如果存在的函数，其他协程调度完成后主协程干一些用户指定的事情
 		if( pfn )
 		{
 			if( -1 == pfn( arg ) )
@@ -1001,7 +1007,7 @@ int co_poll_inner( stCoEpoll_t *ctx,struct pollfd fds[], nfds_t nfds, int timeou
 		arg.pPollItems[i].pSelf = arg.fds + i;
 		arg.pPollItems[i].pPoll = &arg;
 
-		arg.pPollItems[i].pfnPrepare = OnPollPreparePfn; //切回协程之前的预处理函数
+		arg.pPollItems[i].pfnPrepare = OnPollPreparePfn
 		struct epoll_event &ev = arg.pPollItems[i].stEvent;
 
 		if( fds[i].fd > -1 )
