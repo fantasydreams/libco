@@ -608,6 +608,7 @@ int poll(struct pollfd fds[], nfds_t nfds, int timeout)
 	}
 	//对于有相同的fd，把相应的事件合并到统一个fd上
 
+	//对于有相同的fd，把相应的事件合并到统一个fd上
 	int ret = 0;
 	if (nfds_merge == nfds || nfds == 1) {
 		ret = co_poll_inner(co_get_epoll_ct(), fds, nfds, timeout, g_sys_poll_func);
